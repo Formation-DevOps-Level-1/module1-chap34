@@ -1,0 +1,28 @@
+name: CD Pipeline
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Build dependencies
+        run: |
+          chmod +x ./pom.xml
+          ./mvnw clean install -DskipTests
+      
+  build-and-push:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Build docker image
+        run: |
+          COMMIT_ID="${GITHUB_SHA::7}"
+          ./mvnw spring-boot:build-image "-Dspring-boot.build-image.imageName=gildastema/demo-app:${COMMIT_ID}"
+          ./mvnw spring-boot:build-image "-Dspring-boot.build-image.imageName=gildastema/demo-app:latest"
